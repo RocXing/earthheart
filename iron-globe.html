@@ -23,21 +23,22 @@ option = null;
 option = {
     backgroundColor: '#000',
     globe: {
+        globeRadius: 60,
         baseTexture: "data-gl/asset/world.topo.bathy.200401.jpg",
         heightTexture: "data-gl/asset/bathymetry_bw_composite_4k.jpg",
-        displacementScale: 0.2,
+        displacementScale: 0.15,
         shading: 'realistic',
         environment: 'data-gl/asset/starfield.jpg',
         realisticMaterial: {
-            roughness: '/asset/get/s/data-1497599804873-H1SHkG-mZ.jpg',
-            metalness: '/asset/get/s/data-1497599800643-BJbHyGWQW.jpg',
             textureTiling: [8, 4]
         },
         postEffect: {
             enable: true
         },
         viewControl: {
-            autoRotate: false
+            autoRotate: true,
+            autoRotateAfterStill: 0.5,
+            targetCoord: [100, 5]
         },
         light: {
             main: {
