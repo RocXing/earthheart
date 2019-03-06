@@ -3,59 +3,174 @@
    <head>
        <meta charset="utf-8">
    </head>
-   <body style="height: 100%; margin: 0">
-       <div id="container" style="height: 100%"></div>
+   <body style="height: 100%; margin: 0; background: black">
+       <div id="container" style="height: 100%;"></div>
+       <!--<div id="container" style="height: 100%; width: 50%"></div>-->
        <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/echarts.min.js"></script>
        <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts-gl/echarts-gl.min.js"></script>
-       <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts-stat/ecStat.min.js"></script>
-       <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/extension/dataTool.min.js"></script>
-       <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/map/js/china.js"></script>
-       <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/map/js/world.js"></script>
-       <script type="text/javascript" src="https://api.map.baidu.com/api?v=2.0&ak=gRhpagx0e14G92RVEh932MIGz4jPFryo"></script>
-       <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/extension/bmap.min.js"></script>
-       <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/simplex.js"></script>
-       <script type="text/javascript">
-var dom = document.getElementById("container");
-var myChart = echarts.init(dom);
-var app = {};
-option = null;
 
-option = {
-    backgroundColor: '#000',
-    globe: {
-        globeRadius: 60,
-        baseTexture: "data-gl/asset/world.topo.bathy.200401.jpg",
-        heightTexture: "data-gl/asset/bathymetry_bw_composite_4k.jpg",
-        displacementScale: 0.15,
-        shading: 'realistic',
-        environment: 'data-gl/asset/starfield.jpg',
-        realisticMaterial: {
-            textureTiling: [8, 4]
-        },
-        postEffect: {
-            enable: true
-        },
-        viewControl: {
-            autoRotate: true,
-            autoRotateAfterStill: 0.5,
-            targetCoord: [100, 5]
-        },
-        light: {
-            main: {
-                intensity: 2,
-                shadow: true
-            },
-            ambientCubemap: {
-                texture: 'data-gl/asset/pisa.hdr',
-                exposure: 2,
-                diffuseIntensity: 2,
-                specularIntensity: 2
-            }
-        }
+       <script type="text/javascript">
+let dom = document.getElementById("container");
+let myChart = echarts.init(dom);
+let loadingOps = {
+    text: 'Initializing....',
+    color: '#FFF',
+    textColor: '#FFF',
+    maskColor: 'rgba(0, 0, 0, 1)',
+    zlevel: 0
+};
+myChart.showLoading(loadingOps);
+myChart.setOption(getDefaultOption(null, null, null),true);
+let baseTexture = new Image();
+let heightTexture = new Image();
+let environment = new Image();
+baseTexture.onload =()=>{
+    oneImgFinish();
+};
+heightTexture.onload= () => {
+    oneImgFinish();
+};
+environment.onload = () => {
+    oneImgFinish();
+};
+baseTexture.src = "data-gl/asset/world.topo.bathy.200401.jpg";
+heightTexture.src = "data-gl/asset/bathymetry_bw_composite_4k.jpg";
+environment.src = 'data-gl/asset/starfield.jpg';
+
+let imgCounter = 0;
+function oneImgFinish() {
+    imgCounter++;
+    if (imgCounter >=3){
+        let opt = getDefaultOption(baseTexture, heightTexture, environment);
+        myChart.setOption(opt, false);
+        myChart.hideLoading();
     }
-};;
-if (option && typeof option === "object") {
-    myChart.setOption(option, true);
+}
+
+function getDefaultOption(baseTexture, heightTexture, environment) {
+    return {
+        backgroundColor: '#000',
+        globe: {
+            globeRadius: 60,
+            baseTexture: baseTexture,
+            heightTexture: heightTexture,
+            displacementScale: 0.15,
+            shading: 'realistic',
+            environment: environment,
+            realisticMaterial: {
+                textureTiling: [8, 4]
+            },
+            postEffect: {
+                enable: true
+            },
+            viewControl: {
+                autoRotate: true,
+                autoRotateSpeed: 7.5,
+                autoRotateAfterStill: 0.5,
+                targetCoord: [100, 5]
+            },
+            light: {
+                main: {
+                    intensity: 2,
+                    shadow: true
+                },
+                ambientCubemap: {
+                    texture: 'data-gl/asset/pisa.hdr',
+                    exposure: 2,
+                    diffuseIntensity: 2,
+                    specularIntensity: 2
+                }
+            }
+        },
+        toolbox: {
+            right: 30,
+            top: 10,
+            itemSize: 25,
+            feature: {
+                myTool1: {
+                    show: true,
+                    title: 'For Miss Shang',
+                    icon: 'path://M432.45,595.444c0,2.177-4.661,6.82-11.305,6.82c-6.475,0-11.306-4.567-11.306-6.82s4.852-6.812,11.306-6.812C427.841,588.632,432.452,593.191,432.45,595.444L432.45,595.444z M421.155,589.876c-3.009,0-5.448,2.495-5.448,5.572s2.439,5.572,5.448,5.572c3.01,0,5.449-2.495,5.449-5.572C426.604,592.371,424.165,589.876,421.155,589.876L421.155,589.876z M421.146,591.891c-1.916,0-3.47,1.589-3.47,3.549c0,1.959,1.554,3.548,3.47,3.548s3.469-1.589,3.469-3.548C424.614,593.479,423.062,591.891,421.146,591.891L421.146,591.891zM421.146,591.891',
+                    onclick: function (){
+                        alert('myToolHandler1')
+                    }
+                },
+            }
+        },
+        series: [
+            {
+                type: 'scatter',
+                data: [[0,0]],
+                symbolSize: 1,
+                label: {
+                    normal: {
+                        show: true,
+                        position: [-650, -200],
+                        formatter: [
+                            '再见，太阳系...',
+                            'さようなら、太陽系...',
+                            'Goodbye, the Solar System...',
+                            'Прощай солнечная система...',
+                            'Au revoir, le système solaire...',
+                        ].join('\n'),
+                        padding: 10,
+                        color: '#FFF',
+                        fontFamily: '华文细黑,微软雅黑',
+                        fontSize: 20,
+                        shadowBlur: 3,
+                        shadowColor: '#888',
+                        shadowOffsetX: 0,
+                        shadowOffsetY: 3,
+                        lineHeight: 40,
+                    },
+                }
+            },
+            {
+                type: 'scatter',
+                data: [[0,0]],
+                symbolSize: 1,
+                label: {
+                    normal: {
+                        show: true,
+                        position: [425, -200],
+                        formatter: [
+                            '无论地球去哪里流浪',
+                            '我都愿意和你在一起',
+                            '\n',
+                            '——《流浪地球法案》'
+                        ].join('\n'),
+                        padding: 10,
+                        color: '#FFF',
+                        fontFamily: '华文细黑',
+                        fontSize: 20,
+                        shadowBlur: 3,
+                        shadowColor: '#888',
+                        shadowOffsetX: 0,
+                        shadowOffsetY: 3,
+                        lineHeight: 30,
+                    },
+                }
+            }
+
+        ],
+        xAxis: {
+            axisLabel: {show: false},
+            axisLine: {show: false},
+            splitLine: {show: false},
+            axisTick: {show: false},
+            min: -1,
+            max: 1
+        },
+        yAxis: {
+            axisLabel: {show: false},
+            axisLine: {show: false},
+            splitLine: {show: false},
+            axisTick: {show: false},
+            min: -1,
+            max: 1
+        }
+
+    };
 }
        </script>
    </body>
