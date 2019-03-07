@@ -8,7 +8,7 @@
        <!--<div id="container" style="height: 100%; width: 50%"></div>-->
        <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/echarts.min.js"></script>
        <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts-gl/echarts-gl.min.js"></script>
-
+       <script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
        <script type="text/javascript">
 let dom = document.getElementById("container");
 let myChart = echarts.init(dom);
@@ -20,7 +20,7 @@ let loadingOps = {
     zlevel: 0
 };
 myChart.showLoading(loadingOps);
-myChart.setOption(getDefaultOption(null, null, null),true);
+
 let baseTexture = new Image();
 let heightTexture = new Image();
 let environment = new Image();
@@ -33,30 +33,86 @@ heightTexture.onload= () => {
 environment.onload = () => {
     oneImgFinish();
 };
-baseTexture.src = "data-gl/asset/world.topo.bathy.200401.jpg";
-heightTexture.src = "data-gl/asset/bathymetry_bw_composite_4k.jpg";
-environment.src = 'data-gl/asset/starfield.jpg';
-
+let baseTextureUrl = "data-gl/asset/world.topo.bathy.200401.jpg";
+let heightTextureUrl = "data-gl/asset/bathymetry_bw_composite_4k.jpg";
+let environmentUrl = 'data-gl/asset/starfield.jpg';
+baseTexture.src = baseTextureUrl;
+heightTexture.src = heightTextureUrl;
+environment.src = environmentUrl;
+myChart.setOption(getDefaultOption(),true);
+let populationData = null;
 let imgCounter = 0;
+$.getJSON('data-gl/asset/data/population.json', function (data) {
+    populationData = data.filter(function (dataItem) {
+        return dataItem[2] > 0;
+    }).map(function (dataItem) {
+        return [dataItem[0], dataItem[1], Math.sqrt(dataItem[2])];
+    });
+    oneImgFinish();
+});
+
 function oneImgFinish() {
     imgCounter++;
-    if (imgCounter >=3){
-        let opt = getDefaultOption(baseTexture, heightTexture, environment);
-        myChart.setOption(opt, false);
+    if (imgCounter >=4){
         myChart.hideLoading();
     }
 }
 
-function getDefaultOption(baseTexture, heightTexture, environment) {
+let toolClicked = false;
+function onViewToolClick() {
+    if (!toolClicked) {
+        let opt = getDefaultOption();
+        opt.series.push({
+            type: 'scatter3D',
+            coordinateSystem: 'globe',
+            blendMode: 'lighter',
+            symbolSize: 2,
+            silent: true,
+            itemStyle: {
+                color: 'rgb(75, 5, 5)',
+                opacity: 0.8
+            },
+            data: populationData
+        });
+        opt.series.push({
+            type: 'scatter3D',
+            coordinateSystem: 'globe',
+            blendMode: 'lighter',
+            symbolSize: 5,
+            silent: true,
+            itemStyle: {
+                color: 'rgb(100, 0, 0)',
+                opacity: 1,
+                borderWidth:0.5,
+                borderColor: 'rgb(75, 5, 5)',
+            },
+            data: getHeartPointData()
+        });
+        myChart.setOption(opt, true);
+        toolClicked = true;
+    }
+
+}
+
+function getDefaultOption() {
     return {
         backgroundColor: '#000',
+        visualMap:{
+            show: false,
+            min: 0,
+            max: 60,
+            inRange: {
+                symbolSize: [1.0, 10.0]
+            }
+        },
         globe: {
             globeRadius: 60,
-            baseTexture: baseTexture,
-            heightTexture: heightTexture,
+            globeOuterRadius: 60,
+            baseTexture: baseTextureUrl,
+            heightTexture: heightTextureUrl,
             displacementScale: 0.15,
             shading: 'realistic',
-            environment: environment,
+            environment: environmentUrl,
             realisticMaterial: {
                 textureTiling: [8, 4]
             },
@@ -67,19 +123,19 @@ function getDefaultOption(baseTexture, heightTexture, environment) {
                 autoRotate: true,
                 autoRotateSpeed: 7.5,
                 autoRotateAfterStill: 0.5,
-                targetCoord: [100, 5]
+                targetCoord: [0, 0]
             },
             light: {
                 main: {
-                    intensity: 2,
+                    intensity: 1.5,
                     shadow: true
                 },
                 ambientCubemap: {
                     texture: 'data-gl/asset/pisa.hdr',
-                    exposure: 2,
-                    diffuseIntensity: 2,
-                    specularIntensity: 2
-                }
+                    exposure: 1,
+                    diffuseIntensity: 1,
+                    specularIntensity: 1
+                },
             }
         },
         toolbox: {
@@ -91,9 +147,7 @@ function getDefaultOption(baseTexture, heightTexture, environment) {
                     show: true,
                     title: 'For Miss Shang',
                     icon: 'path://M432.45,595.444c0,2.177-4.661,6.82-11.305,6.82c-6.475,0-11.306-4.567-11.306-6.82s4.852-6.812,11.306-6.812C427.841,588.632,432.452,593.191,432.45,595.444L432.45,595.444z M421.155,589.876c-3.009,0-5.448,2.495-5.448,5.572s2.439,5.572,5.448,5.572c3.01,0,5.449-2.495,5.449-5.572C426.604,592.371,424.165,589.876,421.155,589.876L421.155,589.876z M421.146,591.891c-1.916,0-3.47,1.589-3.47,3.549c0,1.959,1.554,3.548,3.47,3.548s3.469-1.589,3.469-3.548C424.614,593.479,423.062,591.891,421.146,591.891L421.146,591.891zM421.146,591.891',
-                    onclick: function (){
-                        alert('myToolHandler1')
-                    }
+                    onclick: onViewToolClick
                 },
             }
         },
@@ -172,6 +226,26 @@ function getDefaultOption(baseTexture, heightTexture, environment) {
 
     };
 }
+
+function getHeartPointData() {
+
+    let data = [];
+    for (let scale = 0.9; scale <= 1.0; scale += 0.025) {
+        for (let step = 0.008; step <= 0.01; step += 0.001) {
+            for (let t = -3; t <= 3; t = t + step) {
+                let x = 16 * Math.pow(Math.sin(t), 3);
+                let y = 13 * Math.cos(t) - 5 * Math.cos(t * 2) - 2 * Math.cos(t * 3) - Math.cos(t * 4);
+                //增大心
+                x = x * scale;
+                y = y * scale;
+                data.push([x, y, 10]);
+            }
+        }
+    }
+    return data;
+
+}
+
        </script>
    </body>
 </html>
